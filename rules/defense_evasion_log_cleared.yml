@@ -1,0 +1,27 @@
+title: Windows Event Log Cleared
+id: wit-003
+status: stable
+description: >
+  Detects the Security or System event log being explicitly cleared
+  (Event ID 1102 for the Security log via "wevtutil cl security" /
+  Clear-EventLog, or Event ID 104 for other logs). Legitimate log
+  maintenance is rare and normally scripted/scheduled; an ad-hoc clear
+  event, especially outside of a known maintenance window, is one of the
+  strongest single indicators of anti-forensic activity available in the
+  Windows event log itself.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1070/001/
+tags:
+  - attack.defense_evasion
+  - attack.t1070.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID:
+      - 1102
+      - 104
+  condition: selection
+level: high

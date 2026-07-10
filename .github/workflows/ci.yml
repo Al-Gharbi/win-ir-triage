@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install ruff pytest
+
+      - name: Lint (ruff)
+        run: ruff check win_ir_triage/ tests/
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+      - name: Smoke-test the CLI against the synthetic example
+        run: |
+          python -c "
+          import sys; sys.path.insert(0, '.')
+          from datetime import datetime
+          from win_ir_triage.parser import NormalizedEvent
+          from win_ir_triage.sigma import load_rules_dir
+          from win_ir_triage.timeline import build_timeline
+          from win_ir_triage.report import render_html
+          from tests.fixtures.synthetic_incident import SYNTHETIC_INCIDENT
+
+          reserved = {'EventID','TimeCreated','Channel','Computer','Provider','EventRecordID'}
+          def to_event(d):
+              return NormalizedEvent(
+                  event_id=d['EventID'], timestamp=datetime.fromisoformat(d['TimeCreated']),
+                  channel=d['Channel'], computer=d['Computer'], provider=d['Provider'],
+                  record_id=d['EventRecordID'], source_file='ci-smoke-test.evtx',
+                  fields={k: v for k, v in d.items() if k not in reserved},
+              )
+
+          events = [to_event(d) for d in SYNTHETIC_INCIDENT]
+          rules = load_rules_dir('rules')
+          timeline = build_timeline(events, rules)
+          flagged = sum(1 for e in timeline if e.is_flagged)
+          assert flagged >= 5, f'expected >=5 flagged events in CI smoke test, got {flagged}'
+          render_html(timeline, 'ci-smoke-test', ['ci-smoke-test.evtx'], 'out/ci-smoke-test.html')
+          print(f'CI smoke test OK: {flagged} flagged events, report generated.')
+          "

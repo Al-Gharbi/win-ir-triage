@@ -1,0 +1,28 @@
+[project]
+name = "win-ir-triage"
+version = "0.1.0"
+description = "Windows Incident Response Triage & Timeline Builder — EVTX parsing, Sigma-subset detection, MITRE ATT&CK correlation, and bilingual (EN/AR) HTML reporting."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Al-Gharbi" }]
+keywords = ["dfir", "digital-forensics", "incident-response", "evtx", "sigma", "mitre-attack", "windows-forensics", "blue-team"]
+dependencies = [
+    "python-evtx>=0.8.1",
+    "PyYAML>=6.0",
+    "Jinja2>=3.1",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+win-ir-triage = "win_ir_triage.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["win_ir_triage*"]

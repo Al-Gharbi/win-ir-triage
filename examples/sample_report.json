@@ -1,0 +1,285 @@
+{
+  "case_name": "example-incident",
+  "generated_at": "2026-07-08T20:05:16.287785+00:00",
+  "source_files": [
+    "synthetic_incident_example.evtx"
+  ],
+  "summary": {
+    "total_events": 7,
+    "flagged_events": 6,
+    "level_counts": {
+      "critical": 1,
+      "high": 3,
+      "medium": 2,
+      "low": 0
+    },
+    "distinct_techniques": [
+      "T1003.001",
+      "T1059.001",
+      "T1070.001",
+      "T1098",
+      "T1136.001",
+      "T1204.002",
+      "T1566.001",
+      "T1569.002"
+    ],
+    "hosts_involved": [
+      "CORP-FILESRV-01.example.corp",
+      "CORP-WKS-042.example.corp"
+    ],
+    "time_range": {
+      "start": "2026-05-11T08:55:00+00:00",
+      "end": "2026-05-11T09:42:17+00:00"
+    },
+    "top_rules": [
+      [
+        "wit-010",
+        1
+      ],
+      [
+        "wit-005",
+        1
+      ],
+      [
+        "wit-004",
+        1
+      ],
+      [
+        "wit-002",
+        1
+      ],
+      [
+        "wit-001",
+        1
+      ],
+      [
+        "wit-007",
+        1
+      ],
+      [
+        "wit-003",
+        1
+      ]
+    ]
+  },
+  "events": [
+    {
+      "timestamp": "2026-05-11T08:55:00+00:00",
+      "event_id": 4624,
+      "channel": "Security",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Security-Auditing",
+      "record_id": 100000,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "TargetUserName": "j.alharbi",
+        "LogonType": "2"
+      },
+      "flagged": false,
+      "level": "informational",
+      "detections": []
+    },
+    {
+      "timestamp": "2026-05-11T09:14:02+00:00",
+      "event_id": 1,
+      "channel": "Microsoft-Windows-Sysmon/Operational",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Sysmon",
+      "record_id": 100001,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "ParentImage": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+        "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "CommandLine": "powershell.exe -NoP -W Hidden -Enc SQBuAHYAbwBrAGUALQBFAHgAcAByAGUAcw==",
+        "User": "CORP\\j.alharbi"
+      },
+      "flagged": true,
+      "level": "critical",
+      "detections": [
+        {
+          "rule_id": "wit-010",
+          "title": "Office/PDF Application Spawning a Command Interpreter",
+          "level": "critical",
+          "mitre": [
+            {
+              "id": "T1566.001",
+              "name": "Phishing: Spearphishing Attachment",
+              "tactic": "Initial Access"
+            },
+            {
+              "id": "T1204.002",
+              "name": "User Execution: Malicious File",
+              "tactic": "Execution"
+            }
+          ]
+        },
+        {
+          "rule_id": "wit-005",
+          "title": "Suspicious Encoded or Hidden-Window PowerShell Execution",
+          "level": "high",
+          "mitre": [
+            {
+              "id": "T1059.001",
+              "name": "Command and Scripting Interpreter: PowerShell",
+              "tactic": "Execution"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-11T09:16:40+00:00",
+      "event_id": 10,
+      "channel": "Microsoft-Windows-Sysmon/Operational",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Sysmon",
+      "record_id": 100002,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "SourceImage": "C:\\Windows\\Temp\\upd_cache.exe",
+        "TargetImage": "C:\\Windows\\system32\\lsass.exe",
+        "GrantedAccess": "0x1fffff",
+        "CallTrace": "unknown"
+      },
+      "flagged": true,
+      "level": "high",
+      "detections": [
+        {
+          "rule_id": "wit-004",
+          "title": "Suspicious LSASS Process Access (Potential Credential Dumping)",
+          "level": "high",
+          "mitre": [
+            {
+              "id": "T1003.001",
+              "name": "OS Credential Dumping: LSASS Memory",
+              "tactic": "Credential Access"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-11T09:21:55+00:00",
+      "event_id": 4720,
+      "channel": "Security",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Security-Auditing",
+      "record_id": 100003,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "TargetUserName": "svc-updater",
+        "SubjectUserName": "j.alharbi"
+      },
+      "flagged": true,
+      "level": "medium",
+      "detections": [
+        {
+          "rule_id": "wit-002",
+          "title": "New Local User Account Created",
+          "level": "medium",
+          "mitre": [
+            {
+              "id": "T1136.001",
+              "name": "Create Account: Local Account",
+              "tactic": "Persistence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-11T09:22:10+00:00",
+      "event_id": 4732,
+      "channel": "Security",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Security-Auditing",
+      "record_id": 100004,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "TargetUserName": "Administrators",
+        "TargetSid": "S-1-5-32-544",
+        "MemberName": "svc-updater",
+        "SubjectUserName": "j.alharbi"
+      },
+      "flagged": true,
+      "level": "high",
+      "detections": [
+        {
+          "rule_id": "wit-001",
+          "title": "Member Added to Local Administrators Group",
+          "level": "high",
+          "mitre": [
+            {
+              "id": "T1098",
+              "name": "Account Manipulation",
+              "tactic": "Persistence"
+            },
+            {
+              "id": "T1136.001",
+              "name": "Create Account: Local Account",
+              "tactic": "Persistence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-11T09:30:03+00:00",
+      "event_id": 7045,
+      "channel": "System",
+      "computer": "CORP-FILESRV-01.example.corp",
+      "provider": "Service Control Manager",
+      "record_id": 100005,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "ServiceName": "WinRMHelper29",
+        "ImagePath": "cmd.exe /c C:\\Windows\\Temp\\stage2.bat",
+        "AccountName": "LocalSystem"
+      },
+      "flagged": true,
+      "level": "medium",
+      "detections": [
+        {
+          "rule_id": "wit-007",
+          "title": "Suspicious Service Installation (Possible PsExec-style Lateral Movement)",
+          "level": "medium",
+          "mitre": [
+            {
+              "id": "T1569.002",
+              "name": "System Services: Service Execution",
+              "tactic": "Lateral Movement / Execution"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-05-11T09:42:17+00:00",
+      "event_id": 1102,
+      "channel": "Security",
+      "computer": "CORP-WKS-042.example.corp",
+      "provider": "Microsoft-Windows-Eventlog",
+      "record_id": 100006,
+      "source_file": "synthetic_incident_example.evtx",
+      "fields": {
+        "SubjectUserName": "svc-updater"
+      },
+      "flagged": true,
+      "level": "high",
+      "detections": [
+        {
+          "rule_id": "wit-003",
+          "title": "Windows Event Log Cleared",
+          "level": "high",
+          "mitre": [
+            {
+              "id": "T1070.001",
+              "name": "Indicator Removal: Clear Windows Event Logs",
+              "tactic": "Defense Evasion"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

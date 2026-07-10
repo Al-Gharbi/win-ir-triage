@@ -1,0 +1,23 @@
+title: New Local User Account Created
+id: wit-002
+status: stable
+description: >
+  Detects creation of a new local user account (Event ID 4720). Routine
+  in IT onboarding workflows, but frequently abused by attackers to
+  create a hidden or innocuously-named backdoor account for persistence.
+  Correlate with wit-001 (added to Administrators shortly afterwards is a
+  strong combined indicator).
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1136/001/
+tags:
+  - attack.persistence
+  - attack.t1136.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4720
+  condition: selection
+level: medium

@@ -1,0 +1,30 @@
+title: Explicit Credential Logon or Interactive RDP Logon
+id: wit-009
+status: stable
+description: >
+  Detects Event ID 4648 (a process explicitly supplied alternate
+  credentials -- e.g. "runas", or a lateral-movement tool authenticating
+  as a different user) and Event ID 4624 with LogonType 10 (an
+  interactive RDP session). Neither is inherently malicious, but both are
+  exactly the kind of authentication activity worth lining up on the
+  timeline next to the recon/persistence hits from the other rules to
+  see whether a single session is responsible for several of them.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1078/
+  - https://attack.mitre.org/techniques/T1021/001/
+tags:
+  - attack.lateral_movement
+  - attack.t1078
+  - attack.t1021.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_explicit_creds:
+    EventID: 4648
+  selection_rdp:
+    EventID: 4624
+    LogonType: '10'
+  condition: selection_explicit_creds or selection_rdp
+level: low

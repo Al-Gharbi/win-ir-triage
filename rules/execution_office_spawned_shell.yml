@@ -1,0 +1,40 @@
+title: Office/PDF Application Spawning a Command Interpreter
+id: wit-010
+status: stable
+description: >
+  Detects Word, Excel, PowerPoint, Outlook, or a PDF reader directly
+  spawning cmd.exe, powershell.exe, wscript.exe, cscript.exe, or
+  mshta.exe as a child process. Legitimate documents essentially never
+  need to launch a shell; this parent/child pairing is the textbook
+  signature of a malicious macro or embedded-object payload executing
+  immediately after a user opens a phishing attachment.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1566/001/
+  - https://attack.mitre.org/techniques/T1204/002/
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1566.001
+  - attack.t1204.002
+logsource:
+  product: windows
+  category: process_creation
+  definition: Sysmon Event ID 1
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\winword.exe'
+      - '\excel.exe'
+      - '\powerpnt.exe'
+      - '\outlook.exe'
+      - '\acrord32.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+  condition: selection_parent and selection_child
+level: critical

@@ -1,0 +1,39 @@
+title: Suspicious Encoded or Hidden-Window PowerShell Execution
+id: wit-005
+status: stable
+description: >
+  Detects powershell.exe (or the ISE / WOW64 variants) launched with
+  Base64-encoded command arguments (-enc / -EncodedCommand) and/or a
+  hidden/minimized window style, and/or an explicit execution-policy
+  bypass. This exact combination is one of the highest signal-to-noise
+  patterns in Windows process-creation telemetry for both commodity
+  malware and manual attacker "hands on keyboard" activity.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  product: windows
+  category: process_creation
+  definition: Sysmon Event ID 1 or Security Event ID 4688 (with command-line auditing)
+detection:
+  selection_image:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\powershell_ise.exe'
+      - '\pwsh.exe'
+  selection_flags:
+    CommandLine|contains:
+      - '-enc'
+      - '-EncodedCommand'
+      - '-e '
+      - '-nop'
+      - '-NoProfile'
+      - '-w hidden'
+      - '-WindowStyle Hidden'
+      - '-ExecutionPolicy Bypass'
+      - '-exec bypass'
+  condition: selection_image and selection_flags
+level: high

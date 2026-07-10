@@ -1,0 +1,42 @@
+title: Common Host/Network Reconnaissance Command Execution
+id: wit-008
+status: stable
+description: >
+  Detects execution of the small set of built-in Windows binaries most
+  commonly chained together for manual or scripted situational-awareness
+  recon right after gaining a foothold (whoami, net user/group/localgroup,
+  nltest, systeminfo, ipconfig /all, tasklist, quser). Any single hit is
+  low-signal on its own (admins run these too) -- the timeline view is
+  what matters: several of these firing back-to-back from the same
+  process tree within a short window is a much stronger indicator than
+  any one of them alone.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1087/
+  - https://attack.mitre.org/techniques/T1082/
+  - https://attack.mitre.org/techniques/T1016/
+tags:
+  - attack.discovery
+  - attack.t1087
+  - attack.t1082
+  - attack.t1016
+logsource:
+  product: windows
+  category: process_creation
+  definition: Sysmon Event ID 1
+detection:
+  selection:
+    Image|endswith:
+      - '\whoami.exe'
+      - '\nltest.exe'
+      - '\systeminfo.exe'
+      - '\quser.exe'
+  selection_net:
+    Image|endswith: '\net.exe'
+    CommandLine|contains:
+      - ' user'
+      - ' group'
+      - ' localgroup'
+      - ' accounts'
+  condition: selection or selection_net
+level: low

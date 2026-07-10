@@ -1,0 +1,32 @@
+title: Suspicious Service Installation (Possible PsExec-style Lateral Movement)
+id: wit-007
+status: stable
+description: >
+  Detects a new Windows service being installed (Event ID 7045) whose
+  binary path points directly at a command interpreter or a script
+  host rather than a real installed application. PsExec and many of its
+  clones/derivatives (as well as manual "sc create" lateral movement)
+  install a short-lived service that simply launches cmd.exe, giving the
+  attacker a remote command execution primitive over SMB.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1569/002/
+  - https://attack.mitre.org/techniques/T1021/002/
+tags:
+  - attack.lateral_movement
+  - attack.execution
+  - attack.t1569.002
+logsource:
+  product: windows
+  service: system
+detection:
+  selection:
+    EventID: 7045
+  suspicious_binary:
+    ImagePath|contains:
+      - 'cmd.exe'
+      - 'powershell.exe'
+      - '\Users\Public\'
+      - '\Windows\Temp\'
+  condition: selection and suspicious_binary
+level: medium

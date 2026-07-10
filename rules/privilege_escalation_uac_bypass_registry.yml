@@ -1,0 +1,31 @@
+title: Potential UAC Bypass via Registry Hijack (Fodhelper/EventVwr/Sdclt style)
+id: wit-006
+status: stable
+description: >
+  Detects a registry value being written under a user's per-user Classes
+  hive at a "\shell\open\command" path. This is the shared mechanic
+  behind an entire family of well-known UAC bypasses (fodhelper.exe,
+  eventvwr.exe, sdclt.exe, computerdefaults.exe and others): a trusted,
+  auto-elevating Microsoft binary consults HKCU/HKU...\_Classes before
+  HKCR, so planting a command handler there causes the attacker's
+  command to run silently at High/System integrity without a UAC prompt.
+  Legitimate software essentially never writes to this specific path.
+author: win-ir-triage
+references:
+  - https://attack.mitre.org/techniques/T1548/002/
+tags:
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.t1548.002
+logsource:
+  product: windows
+  category: registry_set
+  definition: Sysmon Event ID 13
+detection:
+  selection:
+    EventID: 13
+    TargetObject|contains|all:
+      - '_Classes\'
+      - '\shell\open\command'
+  condition: selection
+level: high

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>win-ir-triage &mdash; {{ case_name }}</title>
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121821; --panel-2: #161e2a; --border: #232c3a;
+    --text: #dbe4f0; --muted: #7d8aa0; --accent: #4f9cff;
+    --critical: #ff4d4f; --high: #ff9f43; --medium: #ffd43b; --low: #4f9cff; --info: #57606f;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text); margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+  }
+  html[dir="rtl"] body { font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 80px; }
+  header.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  .lang-toggle { display: flex; gap: 6px; }
+  .lang-toggle button {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
+  }
+  .lang-toggle button.active { background: var(--accent); color: #06111f; border-color: var(--accent); font-weight: 600; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card .num { font-size: 26px; font-weight: 700; }
+  .card .label { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .card.critical .num { color: var(--critical); }
+  .card.high .num { color: var(--high); }
+  .card.medium .num { color: var(--medium); }
+  .card.low .num { color: var(--low); }
+
+  section { margin-bottom: 28px; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 14px; }
+
+  .mitre-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .mitre-chip { background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 12px; }
+  .mitre-chip .tid { color: var(--accent); font-family: var(--mono); margin-inline-end: 6px; }
+
+  .tl-entry { background: var(--panel); border: 1px solid var(--border); border-inline-start: 4px solid var(--info); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .tl-entry.critical { border-inline-start-color: var(--critical); }
+  .tl-entry.high { border-inline-start-color: var(--high); }
+  .tl-entry.medium { border-inline-start-color: var(--medium); }
+  .tl-entry.low { border-inline-start-color: var(--low); }
+  .tl-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; cursor: pointer; flex-wrap: wrap; }
+  .tl-time { font-family: var(--mono); color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .tl-title { font-size: 13.5px; font-weight: 600; flex: 1; }
+  .badge { font-size: 10.5px; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; }
+  .badge.critical { background: rgba(255,77,79,.15); color: var(--critical); }
+  .badge.high { background: rgba(255,159,67,.15); color: var(--high); }
+  .badge.medium { background: rgba(255,212,59,.15); color: var(--medium); }
+  .badge.low { background: rgba(79,156,255,.15); color: var(--low); }
+  .tl-mitre { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .tl-details { display: none; margin-top: 10px; font-family: var(--mono); font-size: 12px; background: var(--panel-2); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-all; color: #b7c3d6; }
+  .tl-entry.open .tl-details { display: block; }
+  .chev { color: var(--muted); transition: transform .15s; }
+  .tl-entry.open .chev { transform: rotate(90deg); }
+
+  .empty { color: var(--muted); font-size: 13px; padding: 20px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
+  footer { color: var(--muted); font-size: 11.5px; text-align: center; margin-top: 40px; }
+  [data-ar] html[lang="en"] & { display: none; }
+  .ar-only { display: none; }
+  html[lang="ar"] .en-only { display: none; }
+  html[lang="ar"] .ar-only { display: inline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1><span class="en-only">win-ir-triage &mdash; Incident Timeline Report</span><span class="ar-only">win-ir-triage — تقرير الخط الزمني للحادثة</span></h1>
+      <div class="subtitle">
+        <span class="en-only">Case: {{ case_name }} &nbsp;&middot;&nbsp; Generated {{ generated_at }} &nbsp;&middot;&nbsp; {{ source_files|length }} source file(s)</span>
+        <span class="ar-only">الحالة: {{ case_name }} &nbsp;&middot;&nbsp; تاريخ الإنشاء {{ generated_at }} &nbsp;&middot;&nbsp; {{ source_files|length }} ملف مصدر</span>
+      </div>
+    </div>
+    <div class="lang-toggle">
+      <button id="btn-en" onclick="setLang('en')">EN</button>
+      <button id="btn-ar" onclick="setLang('ar')">AR &middot; عربي</button>
+    </div>
+  </header>
+
+  <div class="cards">
+    <div class="card"><div class="num">{{ summary.total_events }}</div><div class="label"><span class="en-only">Total Events Parsed</span><span class="ar-only">إجمالي الأحداث المحلَّلة</span></div></div>
+    <div class="card"><div class="num">{{ summary.flagged_events }}</div><div class="label"><span class="en-only">Flagged Events</span><span class="ar-only">أحداث مشبوهة</span></div></div>
+    <div class="card critical"><div class="num">{{ summary.level_counts.critical }}</div><div class="label"><span class="en-only">Critical</span><span class="ar-only">حرجة</span></div></div>
+    <div class="card high"><div class="num">{{ summary.level_counts.high }}</div><div class="label"><span class="en-only">High</span><span class="ar-only">عالية</span></div></div>
+    <div class="card medium"><div class="num">{{ summary.level_counts.medium }}</div><div class="label"><span class="en-only">Medium</span><span class="ar-only">متوسطة</span></div></div>
+    <div class="card low"><div class="num">{{ summary.level_counts.low }}</div><div class="label"><span class="en-only">Low</span><span class="ar-only">منخفضة</span></div></div>
+  </div>
+
+  <section>
+    <h2><span class="en-only">MITRE ATT&amp;CK Techniques Observed</span><span class="ar-only">تقنيات MITRE ATT&amp;CK المُكتشَفة</span></h2>
+    {% if summary.distinct_techniques %}
+    <div class="mitre-grid">
+      {% for tid in summary.distinct_techniques %}
+      <div class="mitre-chip"><span class="tid">{{ tid }}</span>{{ mitre_lookup[tid].name }}</div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty"><span class="en-only">No MITRE-mapped techniques triggered.</span><span class="ar-only">لم يتم رصد أي تقنية مرتبطة بـ MITRE.</span></div>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2><span class="en-only">Flagged Timeline ({{ flagged_entries|length }})</span><span class="ar-only">الخط الزمني للأحداث المشبوهة ({{ flagged_entries|length }})</span></h2>
+    {% if flagged_entries %}
+      {% for e in flagged_entries %}
+      <div class="tl-entry {{ e.level }}" onclick="this.classList.toggle('open')">
+        <div class="tl-head">
+          <span class="tl-time">{{ e.timestamp }}</span>
+          <span class="tl-title">
+            {% for d in e.detections %}{{ d.title }}{% if not loop.last %} · {% endif %}{% endfor %}
+          </span>
+          <span class="badge {{ e.level }}">{{ e.level }}</span>
+          <span class="chev">&#9656;</span>
+        </div>
+        <div class="tl-mitre">
+          {{ e.computer }} &middot; EventID {{ e.event_id }} &middot; {{ e.channel }}
+          {% for d in e.detections %}{% for m in d.mitre %} &middot; <span class="tid" style="color:var(--accent)">{{ m.id }}</span> {{ m.name }}{% endfor %}{% endfor %}
+        </div>
+        <div class="tl-details">{{ e.fields | tojson(indent=2) }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty"><span class="en-only">No detections fired against the parsed events.</span><span class="ar-only">لم تُطلق أي قاعدة كشف ضد الأحداث المحلَّلة.</span></div>
+    {% endif %}
+  </section>
+
+  <footer>
+    <span class="en-only">Generated by win-ir-triage &middot; rules are a Sigma-inspired subset, not a substitute for full DFIR review &middot; source files: {{ source_files | join(', ') }}</span>
+    <span class="ar-only">تم إنشاؤه بواسطة win-ir-triage &middot; القواعد مجموعة فرعية مستوحاة من Sigma وليست بديلاً عن مراجعة جنائية رقمية كاملة &middot; الملفات المصدر: {{ source_files | join(', ') }}</span>
+  </footer>
+
+</div>
+<script>
+function setLang(lang) {
+  document.getElementById('html-root').setAttribute('lang', lang);
+  document.getElementById('html-root').setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-ar').classList.toggle('active', lang === 'ar');
+}
+setLang('en');
+</script>
+</body>
+</html>
