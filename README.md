@@ -1,14 +1,14 @@
 # win-ir-triage
 
 **Windows Incident Response Triage & Timeline Builder.** Parses Windows EVTX
-event logs, runs them through a real Sigma-format detection rule engine
-(hand-written evaluator, no `eval()`), correlates hits against MITRE
+event logs, runs them through a small evaluator for a documented subset of
+the Sigma rule format (hand-written, no `eval()`), correlates hits against MITRE
 ATT&CK, and produces a bilingual (English/Arabic, full RTL) HTML incident
 timeline — plus JSON and ATT&CK Navigator exports for feeding into other
 tooling.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![Tests](https://github.com/Al-Gharbi/win-ir-triage/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/Al-Gharbi/win-ir-triage/actions/workflows/ci.yml/badge.svg)](https://github.com/Al-Gharbi/win-ir-triage/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Why this exists
@@ -22,13 +22,15 @@ minutes of a case, not as a Splunk/Elastic replacement.
 
 ## Features
 
-- **Real Sigma-format rules** — a genuine (documented) subset of the
-  [Sigma](https://github.com/SigmaHQ/sigma) YAML detection format:
-  named selection/filter blocks, `contains` / `startswith` / `endswith` /
-  `re` modifiers, list-as-OR and `|all` list-as-AND, and boolean
-  `condition` expressions (`and` / `or` / `not` / parentheses) — matched
-  with a small hand-written recursive-descent parser, not `eval()`.
-- **10 bundled detection rules** spanning Persistence, Defense Evasion,
+- **A documented subset of the [Sigma](https://github.com/SigmaHQ/sigma)
+  rule format** — named selection/filter blocks, `contains` / `startswith` /
+  `endswith` / `re` modifiers, `*` / `?` wildcards, `null`, list-as-OR and
+  `|all`, and `condition` expressions with `and` / `or` / `not`,
+  parentheses and `1 of x*` / `all of them` — parsed by a small recursive-
+  descent parser, not `eval()`. Rules are **validated when loaded**: a typo
+  in a condition, an unknown modifier or a bad regex skips the rule with a
+  visible message instead of silently never firing.
+- **10 bundled detection rules** (Sysmon and, where the fields exist, Security 4688) spanning Persistence, Defense Evasion,
   Credential Access, Execution, Privilege Escalation, Lateral Movement
   and Discovery (see [table below](#bundled-rule-pack)).
 - **MITRE ATT&CK correlation**, including a ready-to-import
@@ -77,8 +79,8 @@ cd win-ir-triage
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10+ (uses `from __future__ import annotations` and
-modern type-hint syntax throughout).
+Requires Python 3.10+. Runtime dependencies: `python-evtx`, `PyYAML`,
+`Jinja2`. CI runs the tests on 3.10 – 3.13.
 
 ## Usage
 
@@ -91,10 +93,15 @@ python -m win_ir_triage \
   --json --navigator
 ```
 
-This prints a console summary (severity counts, MITRE techniques touched)
-and writes `out/HOST01-2026-05-11.html` (open directly in a browser —
+This prints a console summary (severity counts, detections at or above
+`--min-level`, MITRE techniques touched) and writes `out/HOST01-2026-05-11.html` (open directly in a browser —
 fully self-contained, no external assets), plus optionally a `.json`
 timeline and a `.navigator.json` ATT&CK layer.
+
+**Exit codes** (for scripts and CI): `0` finished, `1` input/usage error
+(missing file, unreadable EVTX, no valid rules), `2` at least one detection at
+or above `--fail-on LEVEL` (`low|medium|high|critical`; omitted = always `0`).
+The case name is sanitised before it is used as a file name.
 
 See [`examples/sample_report.html`](examples/sample_report.html) for a
 full example report (generated from the synthetic fixture described
@@ -108,7 +115,7 @@ below, not real data).
 | wit-002 | New Local User Account Created | Persistence | T1136.001 |
 | wit-003 | Windows Event Log Cleared | Defense Evasion | T1070.001 |
 | wit-004 | Suspicious LSASS Process Access | Credential Access | T1003.001 |
-| wit-005 | Suspicious Encoded/Hidden-Window PowerShell | Execution | T1059.001 |
+| wit-005 | Encoded PowerShell, or hidden window + NoProfile/Bypass | Execution | T1059.001 |
 | wit-006 | UAC Bypass via Registry Hijack (Fodhelper/EventVwr-style) | Privilege Escalation | T1548.002 |
 | wit-007 | Suspicious Service Installation (PsExec-style) | Lateral Movement | T1569.002 |
 | wit-008 | Host/Network Reconnaissance Commands | Discovery | T1087, T1082, T1016 |
@@ -122,24 +129,23 @@ for a minimal example and the [Sigma subset spec](#sigma-subset-supported--not-s
 ## Sigma subset: supported / not supported
 
 **Supported:** named `detection` blocks combined via a `condition` string
-(`and`/`or`/`not`/parentheses); field matching with `|contains`,
-`|startswith`, `|endswith`, `|re`; list values as OR; `|all` combinable
-modifier for AND-across-list; case-insensitive string matching; numeric
-comparison for hex fields regardless of zero-padding (see
-[Methodology](#methodology--validation) below for why that last one
-exists).
+(`and` / `or` / `not` / parentheses, `1 of <pattern>`, `all of <pattern>`,
+`1 of them`, `all of them`, with a trailing `*` in patterns); field matching
+with `|contains`, `|startswith`, `|endswith`, `|re`, and `|all`; list values
+as OR; a block written as a list of maps (OR of the maps); `*` / `?`
+wildcards in plain values; `Field: null`; case-insensitive string matching;
+numeric comparison for hex fields regardless of zero-padding.
 
-**Not (yet) supported** — documented here rather than silently failing:
-`1 of selection*` / `all of them` aggregate quantifiers, Sigma
-correlation rules / `near()` timeframes, and the full official Sigma
-value-list extensions. A rule using these will load but the unsupported
-parts are simply not evaluated — check
-[`win_ir_triage/sigma.py`](win_ir_triage/sigma.py) if in doubt about a
-specific rule. Real conversion to SIEM query languages (Splunk SPL,
-Elastic, Sentinel KQL) is intentionally out of scope for this tool —
-that's a solved problem ([`pySigma`](https://github.com/SigmaHQ/pySigma)
-does it well); this project is about **direct, local, no-SIEM-required
-evaluation**, which is a different use case.
+**Not supported** (a rule that needs these is rejected at load time, with a
+message, rather than being half-evaluated): correlation rules and
+timeframes, keyword / list-of-strings blocks, `near`, and any other value
+modifier (`base64`, `cidr`, `windash`, ...).
+
+**`logsource` is not used to pre-filter events.** A rule is evaluated against
+every event, so each bundled rule pins its events with `EventID` (and
+`Channel` where an ID is ambiguous). Do the same in rules you add.
+Converting rules to SIEM query languages is out of scope; use
+[`pySigma`](https://github.com/SigmaHQ/pySigma) for that.
 
 **⚠️ One documented YAML gotcha:** if a rule needs two conditions on the
 *same field* inside one selection block, you cannot repeat the key
@@ -148,51 +154,45 @@ YAML silently keeps only the last one. Use a list with the `|all`
 modifier instead: `Image|contains|all: ['a', 'b']`. This is exactly the
 bug caught during development of `wit-006` (see below).
 
-## Methodology / validation
+## Validation status
 
-Every bundled rule was validated during development against real,
-technique-labeled samples from
-[**EVTX-ATTACK-SAMPLES**](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
-(Samir Bousseaden) — a well-known public corpus of EVTX exports, each
-capturing one specific ATT&CK technique. That dataset is **not bundled**
-in this repository (it's GPL-licensed and fairly large); clone it
-separately if you want to reproduce the validation or stress-test new
-rules against real technique samples.
-
-That testing process caught two real bugs, both left as regression tests
-so they can't silently come back:
-
-1. **Hex zero-padding mismatch** — Sysmon's `GrantedAccess` field is
-   zero-padded inconsistently (`0x1f1fff` vs `0x001f1fff`) depending on
-   provider/OS version, which broke plain string-equality matching on the
-   LSASS-access rule against a real sample. Fixed by comparing
-   hex-looking values numerically. See
-   `test_hex_values_match_regardless_of_zero_padding` in
-   `tests/test_sigma_engine.py`.
-2. **Duplicate YAML keys silently collide** — an early draft of the UAC
-   bypass rule (`wit-006`) had two `TargetObject|contains:` keys in the
-   same block; YAML kept only the second, silently dropping the first
-   condition. Rewritten using `|contains|all` (see the gotcha above).
-
-The unit test suite (`tests/`) itself uses a small, fully **original,
-hand-authored synthetic incident fixture**
-(`tests/fixtures/synthetic_incident.py`) rather than bundling third-party
-sample data — it's a fictional, dramatized single-host scenario (phishing
-attachment → encoded PowerShell → credential dumping → backdoor admin
-account → lateral movement → log clearing) invented to exercise every
-bundled rule plus one deliberately benign event, so the suite has zero
-external data dependencies and runs in well under a second. The example
-report in `examples/` is generated from this same fixture.
+**Automated (in this repository, runs in CI):** 66 unit tests covering the
+parser (EVTX-style XML, timestamps), the rule engine (every modifier,
+quantifiers, rejection of invalid rules), one positive and one negative case
+per bundled rule, the CLI (exit codes, `--fail-on`, `--min-level`, file-name
+sanitising), and HTML escaping of hostile event data.
 
 ```bash
-pytest tests/ -v
+python -m unittest discover -s tests -t . -v      # or: pytest tests/
+python examples/make_example.py                   # regenerate examples/
 ```
+
+**What these tests do not show.** They use hand-written events
+(`tests/fixtures/synthetic_incident.py`, inline dicts), so they demonstrate
+the logic, not behaviour on real logs. In particular, no CI test reads a real
+`.evtx` file; the `python-evtx` reading path is exercised only on the
+author's machine.
+
+**Real-data validation (author's claim, evidence not included).** The
+author reports having run the original rules against technique-labelled
+samples from
+[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
+(not redistributed here). The per-sample results are not recorded in this
+repository, and several rules were changed afterwards (see
+[CHANGELOG](CHANGELOG.md)). Until a results table is added to
+`docs/VALIDATION.md`, treat the rules as **unvalidated on real data** and
+expect false positives (for example deployment tooling that uses
+`-EncodedCommand`, or EDR agents opening LSASS).
+
+Two real bugs found earlier by that process stay covered by regression
+tests: inconsistent hex zero-padding in `GrantedAccess`, and duplicate YAML
+keys silently overwriting each other (hence `|contains|all`).
 
 ## Roadmap
 
 - Registry hive parsing (Run/RunOnce keys, UserAssist) to widen coverage
   beyond event-log-based artifacts
-- `1 of selection*` / `all of them` Sigma quantifier support
+- A `docs/VALIDATION.md` results table from re-running every rule on real samples
 - Optional real `pySigma` backend for SIEM-query export alongside the
   local evaluator
 - Prefetch / Amcache / ShimCache ingestion
