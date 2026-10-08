@@ -1,6 +1,6 @@
 [project]
 name = "win-ir-triage"
-version = "0.1.0"
+version = "0.2.0"
 description = "Windows Incident Response Triage & Timeline Builder — EVTX parsing, Sigma-subset detection, MITRE ATT&CK correlation, and bilingual (EN/AR) HTML reporting."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,7 +11,6 @@ dependencies = [
     "python-evtx>=0.8.1",
     "PyYAML>=6.0",
     "Jinja2>=3.1",
-    "rich>=13.0",
 ]
 
 [project.optional-dependencies]

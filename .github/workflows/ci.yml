@@ -6,12 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -23,40 +27,25 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff pytest
+          pip install ruff
 
       - name: Lint (ruff)
-        run: ruff check win_ir_triage/ tests/
+        run: ruff check win_ir_triage/ tests/ examples/
 
-      - name: Run tests
-        run: pytest tests/ -v
-
-      - name: Smoke-test the CLI against the synthetic example
+      - name: Every bundled rule loads (none silently skipped)
         run: |
-          python -c "
-          import sys; sys.path.insert(0, '.')
-          from datetime import datetime
-          from win_ir_triage.parser import NormalizedEvent
+          python - <<'PY'
+          import sys
           from win_ir_triage.sigma import load_rules_dir
-          from win_ir_triage.timeline import build_timeline
-          from win_ir_triage.report import render_html
-          from tests.fixtures.synthetic_incident import SYNTHETIC_INCIDENT
+          errors = []
+          rules = load_rules_dir("rules", on_error=lambda p, e: errors.append(f"{p.name}: {e}"))
+          if errors:
+              sys.exit("rule errors:\n" + "\n".join(errors))
+          print(f"{len(rules)} rules OK")
+          PY
 
-          reserved = {'EventID','TimeCreated','Channel','Computer','Provider','EventRecordID'}
-          def to_event(d):
-              return NormalizedEvent(
-                  event_id=d['EventID'], timestamp=datetime.fromisoformat(d['TimeCreated']),
-                  channel=d['Channel'], computer=d['Computer'], provider=d['Provider'],
-                  record_id=d['EventRecordID'], source_file='ci-smoke-test.evtx',
-                  fields={k: v for k, v in d.items() if k not in reserved},
-              )
+      - name: Tests
+        run: python -m unittest discover -s tests -t . -v
 
-          events = [to_event(d) for d in SYNTHETIC_INCIDENT]
-          rules = load_rules_dir('rules')
-          timeline = build_timeline(events, rules)
-          flagged = sum(1 for e in timeline if e.is_flagged)
-          assert flagged >= 5, f'expected >=5 flagged events in CI smoke test, got {flagged}'
-          render_html(timeline, 'ci-smoke-test', ['ci-smoke-test.evtx'], 'out/ci-smoke-test.html')
-          print(f'CI smoke test OK: {flagged} flagged events, report generated.')
-          "

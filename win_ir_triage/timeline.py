@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .parser import NormalizedEvent
+from .parser import NormalizedEvent, UNKNOWN_TIME
 from .sigma import SigmaRule, evaluate_rule
 from . import mitre
 
@@ -77,7 +77,7 @@ def summarize(entries: list[TimelineEntry]) -> dict[str, Any]:
             technique_ids.update(r.mitre_technique_ids)
             rule_hit_counts[r.rule_id] = rule_hit_counts.get(r.rule_id, 0) + 1
 
-    timestamps = [e.event.timestamp for e in entries if e.event.timestamp.year > 1]
+    timestamps = [e.event.timestamp for e in entries if e.event.timestamp != UNKNOWN_TIME]
     return {
         "total_events": len(entries),
         "flagged_events": len(flagged),
