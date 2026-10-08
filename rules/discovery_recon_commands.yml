@@ -23,20 +23,35 @@ tags:
 logsource:
   product: windows
   category: process_creation
-  definition: Sysmon Event ID 1
+  definition: Sysmon Event ID 1 or Security Event ID 4688 with command-line auditing
 detection:
   selection:
-    Image|endswith:
-      - '\whoami.exe'
-      - '\nltest.exe'
-      - '\systeminfo.exe'
-      - '\quser.exe'
+    - EventID: 1
+      Image|endswith:
+        - '\whoami.exe'
+        - '\nltest.exe'
+        - '\systeminfo.exe'
+        - '\quser.exe'
+    - EventID: 4688
+      NewProcessName|endswith:
+        - '\whoami.exe'
+        - '\nltest.exe'
+        - '\systeminfo.exe'
+        - '\quser.exe'
   selection_net:
-    Image|endswith: '\net.exe'
-    CommandLine|contains:
-      - ' user'
-      - ' group'
-      - ' localgroup'
-      - ' accounts'
+    - EventID: 1
+      Image|endswith: '\net.exe'
+      CommandLine|contains:
+        - ' user'
+        - ' group'
+        - ' localgroup'
+        - ' accounts'
+    - EventID: 4688
+      NewProcessName|endswith: '\net.exe'
+      CommandLine|contains:
+        - ' user'
+        - ' group'
+        - ' localgroup'
+        - ' accounts'
   condition: selection or selection_net
 level: low

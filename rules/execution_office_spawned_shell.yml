@@ -20,21 +20,35 @@ tags:
 logsource:
   product: windows
   category: process_creation
-  definition: Sysmon Event ID 1
+  definition: Sysmon Event ID 1 or Security Event ID 4688 (ParentProcessName needs Windows 10 / Server 2016 or later)
 detection:
-  selection_parent:
+  sysmon:
+    EventID: 1
     ParentImage|endswith:
       - '\winword.exe'
       - '\excel.exe'
       - '\powerpnt.exe'
       - '\outlook.exe'
       - '\acrord32.exe'
-  selection_child:
     Image|endswith:
       - '\cmd.exe'
       - '\powershell.exe'
       - '\wscript.exe'
       - '\cscript.exe'
       - '\mshta.exe'
-  condition: selection_parent and selection_child
+  security:
+    EventID: 4688
+    ParentProcessName|endswith:
+      - '\winword.exe'
+      - '\excel.exe'
+      - '\powerpnt.exe'
+      - '\outlook.exe'
+      - '\acrord32.exe'
+    NewProcessName|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+  condition: sysmon or security
 level: critical

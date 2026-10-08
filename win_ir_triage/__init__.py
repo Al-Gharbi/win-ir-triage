@@ -9,7 +9,7 @@ from .parser import parse_evtx_file, parse_evtx_paths, NormalizedEvent
 from .sigma import load_rule, load_rules_dir, evaluate_rule, scan, SigmaRule
 from .timeline import build_timeline, summarize, TimelineEntry
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "parse_evtx_file",
