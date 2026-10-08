@@ -32,7 +32,7 @@ jobs:
           pip install ruff
 
       - name: Lint (ruff)
-        run: ruff check win_ir_triage/ tests/ examples/
+        run: ruff check --select E4,E7,E9,F win_ir_triage/ tests/ examples/
 
       - name: Every bundled rule loads (none silently skipped)
         run: |
@@ -48,4 +48,3 @@ jobs:
 
       - name: Tests
         run: python -m unittest discover -s tests -t . -v
-
