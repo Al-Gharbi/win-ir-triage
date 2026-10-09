@@ -94,6 +94,11 @@ class Service(unittest.TestCase):
     def test_fires_on_cmd_service(self):
         self.assertTrue(fires("wit-007", {"EventID": 7045, "ImagePath": r"cmd.exe /c C:\Windows\Temp\x.bat"}))
 
+    def test_comspec_and_named_pipe_services_fire(self):
+        # found on real data: a service whose ImagePath is %COMSPEC% /c ... > \\.\pipe\x
+        self.assertTrue(fires("wit-007", {"EventID": 7045, "ImagePath": r"%COMSPEC% /c echo x > \\.\pipe\svcpipe"}))
+        self.assertTrue(fires("wit-007", {"EventID": 7045, "ImagePath": r"%SystemRoot%\system32\cmd /c whoami"}))
+
     def test_normal_service_does_not_fire(self):
         self.assertFalse(fires("wit-007", {"EventID": 7045, "ImagePath": r"C:\Program Files\App\svc.exe"}))
         self.assertFalse(fires("wit-007", {"EventID": 7036, "ImagePath": "cmd.exe"}))
