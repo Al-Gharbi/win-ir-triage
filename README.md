@@ -156,7 +156,7 @@ bug caught during development of `wit-006` (see below).
 
 ## Validation status
 
-**Automated (in this repository, runs in CI):** 66 unit tests covering the
+**Automated (in this repository, runs in CI):** 67 unit tests covering the
 parser (EVTX-style XML, timestamps), the rule engine (every modifier,
 quantifiers, rejection of invalid rules), one positive and one negative case
 per bundled rule, the CLI (exit codes, `--fail-on`, `--min-level`, file-name
@@ -169,23 +169,21 @@ python examples/make_example.py                   # regenerate examples/
 
 **What these tests do not show.** They use hand-written events
 (`tests/fixtures/synthetic_incident.py`, inline dicts), so they demonstrate
-the logic, not behaviour on real logs. In particular, no CI test reads a real
-`.evtx` file; the `python-evtx` reading path is exercised only on the
-author's machine.
+the logic, not behaviour on real logs. Real `.evtx` files are exercised by a
+separate CI job that clones EVTX-ATTACK-SAMPLES and runs
+`tools/validate_attack_samples.py`.
 
-**Real-data validation (author's claim, evidence not included).** The
-author reports having run the original rules against technique-labelled
-samples from
+**Real-data validation (2026-10-09).** All 278 samples of
 [EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)
-(not redistributed here). The per-sample results are not recorded in this
-repository, and several rules were changed afterwards (see
-[CHANGELOG](CHANGELOG.md)). Until a results table is added to
-`docs/VALIDATION.md`, treat the rules as **unvalidated on real data** and
-expect false positives (for example deployment tooling that uses
-`-EncodedCommand`, or EDR agents opening LSASS).
+(37,364 events) were parsed without error and event counts matched the dataset's
+own CSV. 16 hand-labelled samples behave as expected. The run found and fixed
+one missed detection (wit-007) and showed that the Office rule (wit-010) has
+never been exercised by a real Office-to-shell chain. The labels were chosen
+after seeing the results and the dataset has no benign traffic, so
+false-positive rates are **not** known. Details, commands and limits:
+[docs/VALIDATION.md](docs/VALIDATION.md).
 
-Two real bugs found earlier by that process stay covered by regression
-tests: inconsistent hex zero-padding in `GrantedAccess`, and duplicate YAML
+Two earlier bugs stay covered by regression tests: inconsistent hex zero-padding in `GrantedAccess`, and duplicate YAML
 keys silently overwriting each other (hence `|contains|all`).
 
 ## Roadmap

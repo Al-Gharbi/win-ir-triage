@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `wit-007` missed services installed with `%COMSPEC% /c ...` or a named-pipe
+  `ImagePath` (found by running on EVTX-ATTACK-SAMPLES).
+
+### Added
+- `tools/validate_attack_samples.py`, `docs/VALIDATION.md` (real-data run and
+  its limits) and a CI job that runs the validation on the public dataset.
+
 ## [0.2.0] - 2026-10-08
 
 ### Fixed

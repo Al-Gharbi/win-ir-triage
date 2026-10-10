@@ -25,6 +25,9 @@ detection:
   suspicious_binary:
     ImagePath|contains:
       - 'cmd.exe'
+      - '%COMSPEC%'
+      - 'cmd /c'
+      - '\\.\pipe\'
       - 'powershell.exe'
       - '\Users\Public\'
       - '\Windows\Temp\'
